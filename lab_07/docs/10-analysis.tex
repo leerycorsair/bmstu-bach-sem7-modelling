@@ -1,0 +1,94 @@
+\section*{Формальная постановка задачи}
+
+Промоделировать систему обработки заявок на языке GPSS, определив минимальный размер буферной памяти, при котором не будет потерь сообщений.
+
+Исходные данные:
+\begin{itemize}
+	\item параметры генератора заявок;
+	\item параметры обработчика заявок;
+	\item количество заявок;
+	\item процент возврата заявок.
+\end{itemize}
+
+
+\section*{Средства реализации}
+
+Язык программирования --- GPSS.
+
+
+\section*{Листинг кода}
+
+\begin{lstlisting}
+UNIFORM_A variable 1
+UNIFORM_B variable 10
+ERLANG_ALPHA variable 3
+ERLANG_BETA variable 5
+RETURN_RATE variable 0.9
+
+simulate
+				generate(uniform(1,V$UNIFORM_A,V$UNIFORM_B))
+operator		queue queue_
+				seize operator_	
+				depart queue_	 
+				advance(gamma(1,0,V$ERLANG_ALPHA,V$ERLANG_BETA))		
+				release operator_
+				transfer V$RETURN_RATE,finish,operator
+finish			terminate 1	
+	 
+start 1000
+\end{lstlisting}
+
+\clearpage
+
+\section*{Демонстрация работы программы}
+
+\begin{lstlisting}
+GPSS World Simulation Report - main.53.1
+
+Saturday, December 17, 2022 22:05:04  
+
+START TIME           END TIME  BLOCKS  FACILITIES  STORAGES
+0.000         151058.778     8        1          0
+
+
+NAME                       VALUE  
+ERLANG_ALPHA                10002.000
+ERLANG_BETA                 10003.000
+FINISH                          8.000
+OPERATOR                        2.000
+OPERATOR_                   10006.000
+QUEUE_                      10005.000
+RETURN_RATE                 10004.000
+UNIFORM_A                   10000.000
+UNIFORM_B                   10001.000
+
+LABEL              LOC  BLOCK TYPE     ENTRY COUNT CURRENT COUNT RETRY
+					1    GENERATE         27607             0       0
+OPERATOR            2    QUEUE            36717         26606       0
+					3    SEIZE            10111             1       0
+					4    DEPART           10110             0       0
+					5    ADVANCE          10110             0       0
+					6    RELEASE          10110             0       0
+					7    TRANSFER         10110             0       0
+FINISH              8    TERMINATE         1000             0       0
+
+FACILITY	ENTRIES  UTIL.   AVE. TIME AVAIL. OWNER PEND INTER RETRY DELAY
+OPERATOR_	10111    1.000      14.939  1     7601    0    0     0   26606
+
+QUEUE		MAX CONT. ENTRY ENTRY(0) AVE.CONT. AVE.TIME   AVE.(-0) RETRY
+QUEUE_    26607 26607  36717      1  13288.603  54671.137  54672.626   0
+
+CEC XN   PRI          M1      ASSEM  CURRENT  NEXT  PARAMETER    VALUE
+  7601    0       41665.741   7601      3      4
+
+FEC XN   PRI         BDT      ASSEM  CURRENT  NEXT  PARAMETER    VALUE
+ 27608    0      151067.763   27608      0      1
+\end{lstlisting}
+
+Таким образом, для обработки 1000 для заданных значений распределений получаем минимальный размер буферной памяти 26607 у.е.
+
+
+
+
+
+

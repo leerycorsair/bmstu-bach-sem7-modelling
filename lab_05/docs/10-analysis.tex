@@ -1,0 +1,150 @@
+\section*{Формальная постановка задачи}
+
+
+Слудует выполнить моделирование процесса обслуживания клиентов в информационном центре:
+\begin{itemize}
+	\item клиенты приходят в интервалы времени $10\pm2$ мин;
+	\item клиентов обслуживают три оператора, среднее время обработки заявки которых соответственно $20\pm5$, $40\pm10$, $40\pm20$ мин;
+	\item клиент получает отказ, если все операторы заняты;
+	\item клиент стремится занять оператора с наивысшей производительностью;
+	\item полученные запросы сдаются в приемный накопитель, откуда они выбираются для обработки;
+	\item первый компьютер получает запросы от первого и второго оператора, время обработки $15$ мин;
+	\item второй компьютер получает запросы от третьего оператора, время обработки $30$ мин.
+\end{itemize}
+
+Для заданного количества заявок следует определить количество и процент потерянных запросов клиентов.
+
+Эндогенные переменные: время обработки задания на $i-$ом операторе и время решения задания на $j-$ом компьютере.
+
+Экзогенные переменные: число обслуженных клиентов и число клиентов, получивших отказ.
+
+\section*{Средства реализации}
+
+Язык программирования --- Python.
+
+GUI --- QT.
+
+\clearpage
+
+\section*{Листинг кода}
+
+\begin{lstlisting}
+from model.base_generator import BaseGenerator
+
+class RequestGenerator:
+	def __init__(self, generator: BaseGenerator, cnt: int) -> None:
+		self.generator = generator
+		self.cnt = cnt
+		self.receivers: RequestProcessor = []
+		self.next = 0
+
+	def generate(self) -> bool:
+		self.cnt -= 1
+		for receiver in self.receivers:
+			if receiver.check_max():
+				return receiver
+		return None
+
+	def delay(self) -> float:
+		return self.generator.generate()
+
+class RequestProcessor:
+	def __init__(self, generator: BaseGenerator, max_queue_size: int = -1) -> None:
+		self.generator = generator
+		self.queue, self.received, self.max_queue, self.processed = 0, 0, max_queue_size, 0
+		self.next = 0
+
+	def check_max(self) -> bool:
+		if self.max_queue == -1 or self.max_queue > self.queue:
+			self.queue += 1
+			self.received += 1
+			return True
+		return False
+
+	def process(self) -> None:
+		if self.queue > 0:
+			self.queue -= 1
+			self.processed += 1
+
+	def delay(self) -> float:
+		return self.generator.generate()
+\end{lstlisting}
+
+\clearpage
+
+\begin{lstlisting}
+from model.request import RequestGenerator, RequestProcessor
+
+class Model:
+	def __init__(self, generator: RequestGenerator, operators: list[RequestProcessor], computers: list[RequestProcessor]):
+		self.generator = generator
+		self.operators = operators
+		self.computers = computers
+
+	def event_mode(self):
+		lost = 0
+		generated_requests = self.generator.cnt
+		self.generator.receivers = self.operators
+		self.operators[0].receivers = [self.computers[0]]
+		self.operators[1].receivers = [self.computers[0]]
+		self.operators[2].receivers = [self.computers[1]]
+		self.generator.next = self.generator.delay()
+		self.operators[0].next = self.operators[0].delay()
+		blocks = [self.generator,
+			self.operators[0], self.operators[1], self.operators[2],
+			self.computers[0], self.computers[1]]
+
+		while self.generator.cnt >= 0:
+			current_time = self.generator.next
+			for block in blocks:
+				if 0 < block.next < current_time:
+					current_time = block.next
+
+			for block in blocks:
+			if current_time == block.next:
+				if not isinstance(block, RequestProcessor):
+					next_generator = self.generator.generate()
+					if next_generator is not None:
+						next_generator.next = current_time + next_generator.delay()
+					else:
+						lost += 1
+					self.generator.next = current_time + self.generator.delay()
+				else:
+					block.process()
+					if block.queue == 0:
+						block.next = 0
+					else:
+						block.next = current_time + block.delay()
+		return {"lost_percentage": lost / generated_requests * 100,
+	"lost": lost}
+\end{lstlisting}
+
+\clearpage
+
+\begin{lstlisting}
+from scipy.stats import uniform
+
+	class BaseGenerator:
+		def __init__(self, loc: float, scale: float = 0) -> None:
+			self.loc = loc
+			self.scale = scale
+	
+		def generate(self) -> float:
+			return uniform.rvs(loc=self.loc - self.scale, scale=2 * self.scale, size=1)[0]
+\end{lstlisting}
+
+
+\clearpage
+
+\section*{Демонстрация работы программы}
+
+\boximg{80mm}{1}{Работа программы}
+\boximg{80mm}{2}{Работа программы}
+\clearpage
+
+
+
+
+
+
+

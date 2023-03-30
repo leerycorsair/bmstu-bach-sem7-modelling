@@ -1,0 +1,117 @@
+\section*{Формальная постановка задачи}
+
+Реализовать программное обеспечение для построения графиков функции рапределения и фукнции плотности вероятности для случайных челичин, имеющих следующие распределения:
+\begin{itemize}
+	\item равномерное распределение;
+	\item распределение Эрланга.
+\end{itemize}
+
+\section*{Краткие теоритические сведения}
+
+\textbf{Равномерное распределение} --- распределение случайной величины, принимающей значения, принадлежащей некоторому промежутку конечной длины, характрезующееся тем, что плотность вероятности в этом промежутке всюду постоянна.
+
+Функция распределения равномерной непрерывной случайной величины имеет следующий вид: 
+\begin{equation*}
+	F(x) = \begin{cases}
+		0, & x \leq a \\
+		\frac{x-a}{b-a}, & a \leq x \leq b \\
+		1, & x > b
+	\end{cases}
+\end{equation*}
+
+Плотность распределения равномерной непрерывной случайной величины имеет следующий вид:
+\begin{equation*}
+	f(x) = \begin{cases}
+		\frac{1}{b-a}, & a \leq x \leq b \\
+		0, & \text{иначе}
+	\end{cases}
+\end{equation*}
+
+\textbf{Распределение Эрланга} --- распределение, описывающее непрерывную случайную величину, принимающую неотрицательные значения и представляющую собой сумму $k$ независимых случайных величин, распределенных по одному и тому же экспоненциальному закону с параметром $\theta$.
+
+Функция распределения Эрланга непрерывной случайной величины имеет следующий вид:
+\begin{equation*}
+	F(x) = 1 - e^{-x/\theta} \sum_{i=0}^{k-1} \frac{(x/theta)^i}{i!} 
+\end{equation*}
+
+Плотность распределения Эрланга непрерывной случайной величины имеет следующий вид:
+\begin{equation*}
+	f(x) = \frac{x^{k-1}e^{-x\theta}\theta^k}{(k-1)!}
+\end{equation*}
+
+\section*{Средства реализации}
+
+Язык программирования --- Python.
+
+GUI --- QT и QTGraph.
+
+\clearpage
+
+\section*{Листинг кода}
+
+\begin{lstlisting}
+from math import exp, factorial
+import numpy as np
+
+def ud_cdf(x: float, a: float, b: float):
+	if x < a:
+		return 0
+	elif x > b:
+		return 1
+	else:
+		return (x - a) / (b - a)
+
+def ud_pdf(x: float, a: float, b: float):
+	if x >= a and x <= b:
+		return 1 / (b - a)
+	return 0
+
+def erlang_cdf(x: float, k: float, theta: float):
+	return 1 - exp(-x / theta) * sum((x/theta)**i/factorial(i) for i in range(k))
+
+def erlang_pdf(x: float, k: float, theta: float):
+	return x**(k-1) * exp(-x*theta) * theta**k / factorial(k-1)
+
+def calc_ud_cdf(left: float, right: float, a: float, b: float):
+	x = np.arange(left, right, (right-left)/1000)
+	y = [ud_cdf(x, a, b) for x in x]
+	return x, y
+
+def calc_ud_pdf(left: float, right: float, a: float, b: float):
+	x = np.arange(left, right, (right-left)/1000)
+	y = [ud_pdf(x, a, b) for x in x]
+	return x, y
+
+def calc_erlang_cdf(max: float, k: int, theta: float):
+	x = np.arange(0, max, max/1000)
+	y = [erlang_cdf(x, k, theta) for x in x]
+	return x, y
+
+def calc_erlang_pdf(max: float, k: int, theta: float):
+	x = np.arange(0, max, max/1000)
+	y = [erlang_pdf(x, k, theta) for x in x]
+	return x, y
+\end{lstlisting}
+
+\section*{Демонстрация работы программы}
+
+\boximg{75mm}{ud1}{Равномерное распределение на отрезке $[-5,15]$ с параметрами $a=-5$ и $b=15$}
+
+\boximg{75mm}{ud2}{Равномерное распределение на отрезке $[-7,19]$ с параметрами $a=-4$ и $b=11$}
+
+\clearpage
+
+\boximg{75mm}{erlang1}{Распределение Эрланга на отрезке $[0,30]$ с параметрами $k=1$ и $\theta=1$}
+
+\boximg{75mm}{erlang2}{Распределение Эрланга на отрезке $[0,30]$ с параметрами $k=1$ и $\theta=5$}
+
+\clearpage
+
+\boximg{75mm}{erlang3}{Распределение Эрланга на отрезке $[0,30]$ с параметрами $k=10$ и $\theta=1$}
+
+
+
+
+
+
+

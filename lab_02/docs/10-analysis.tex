@@ -1,0 +1,133 @@
+\section*{Формальная постановка задачи}
+
+Реализовать программное обеспечение для определения вероятности и времени пребывания системы в каждом из состоянии в установившемся режиме работы СМО.
+
+Исходные данные:
+\begin{itemize}
+	\item количество состояний системы (до 10);
+	\item матрица интенсивностей переходов из состояния в состояние.
+\end{itemize}
+
+\section*{Краткие теоритические сведения}
+
+Случайный процесс, протекающий в сложной системе S, называется \textbf{марковским}, если он обладает следующим свойством: для каждого момента времени $t_0$ вероятность любого состояния системы в будущем при $t>t_0$ зависит только от состояния системы в настоящем $t=t_0$ и не зависит от того, когда и каким образом система перешла в это состояние (как процесс развивался в прошлом).
+
+В марковском случайном процессе будущее развитие зависит только от настоящего состояния и не зависит от предыстории процесса.
+
+Для марковского процесса составлены уравнения Колмогорова:
+\begin{equation*}
+	F = (P'(t), P(t), \lambda) = 0
+\end{equation*}
+
+Вероятностью $i$-го состояния называется вероятность $P_i(t)$ того, что в момент времени $t$ система будет находится в состоянии $S_i$. Для любого момента $t$ сумма вероятностей всех состояний равно единице (правило нормировки).
+
+Для нахождения предельных вероятностей используется система уравнений, определяемая следующим образом:
+\begin{itemize}
+	\item в левой части каждого из уравнений стоит производная вероятности $i$-го состояния;
+	\item в	правой части - сумма произведений вероятностей всех состояний (из которых идут стрелки в	данное состояние), умноженная на интенсивности соответствующих потоков событий, минус суммарная интенсивность всех потоков, выводящих систему из данного состояния, умноженная на вероятность данного $i$-го состояния.
+\end{itemize} 
+
+После нахождения вероятностей, необходимо вычислить время пребывания системы в каждом из состояний. Для этого необходимо с заданным интервалом $dt$ вычислять приращение вероятности для $i$-го состояния. Вычисления завершаются, когда найденная вероятность будет равна соответствующей предельной с точностью до заданной погрешности.
+
+Для приращения вероятности $dp$ необходимо задать начальные значения, например, $1/n$, где $n$ --- число состояний системы.
+
+\section*{Средства реализации}
+
+Язык программирования --- Python.
+
+GUI --- QT.
+
+\clearpage
+
+\section*{Листинг кода}
+
+\begin{lstlisting}
+from numpy import linalg
+import random
+
+TIME_DELTA = 1e-3
+EPS = 1e-5
+
+def random_mtr(size: int) -> list[list[float]]:
+	mtr = [[round(random.random(), 2) * random.randint(0, 1)
+			for _ in range(size)] for _ in range(size)]
+	return mtr
+
+
+def get_coef_mtr(mtr: list[list[float]]) -> list[list[float]]:
+	size = len(mtr)
+	coef_mtr = [[0.0 for _ in range(size)] for _ in range(size)]
+	
+	for i in range(size):
+		for j in range(size):
+			if (i == j):
+				coef_mtr[i][i] = -sum(mtr[i]) + mtr[i][i]
+			else:
+				coef_mtr[i][j] = mtr[j][i]
+	return coef_mtr
+
+
+def calc_prob(mtr: list[list[float]]) -> list[float]:
+	size = len(mtr)
+	coef_mtr = get_coef_mtr(mtr)
+	coef_mtr[size - 1] = [1 for _ in range(size)]
+	ordinate_values = [0 if i != size - 1 else 1 for i in range(size)]
+	return linalg.solve(coef_mtr, ordinate_values).tolist()
+
+
+def calc_prob_delta(mtr: list[list[float]], prob_curr: list[float]):
+	size = len(mtr)
+	
+	prob_delta = []
+	coef_mtr = get_coef_mtr(mtr)
+	
+	for i in range(size):
+		for j in range(size):
+			coef_mtr[i][j] *= prob_curr[j]
+		prob_delta.append(sum(coef_mtr[i]) * TIME_DELTA)
+	return prob_delta
+\end{lstlisting}
+
+\begin{lstlisting}
+def calc_time(mtr: list[list[float]], prob: list[float]):
+	size = len(mtr)
+	
+	time_curr = 0.0
+	prob_curr = [1.0 / size for _ in range(size)]
+	
+	time = [0.0 for _ in range(size)]
+	while not all(time):
+		prob_delta = calc_prob_delta(mtr, prob_curr)
+		for i in range(size):
+			if not time[i] and abs(prob_curr[i] - prob[i]) <= EPS:
+				time[i] = time_curr
+			prob_curr[i] += prob_delta[i]
+		time_curr += TIME_DELTA
+		
+	return time
+
+
+def calc_res(mtr: list[list[float]]) -> tuple[list[float], list[float]]:
+	prob = calc_prob(mtr)
+	time = calc_time(mtr, prob)
+	return prob, time
+\end{lstlisting}
+
+\clearpage
+
+\section*{Демонстрация работы программы}
+
+\boximg{82mm}{1}{Работа программы для системы с 6 состояниями}
+
+\boximg{82mm}{2}{Работа программы для системы с 10 состояниями}
+
+\clearpage
+
+\boximg{82mm}{3}{Работа программы для системы с 3 состояниями}
+
+
+
+
+
+
+
